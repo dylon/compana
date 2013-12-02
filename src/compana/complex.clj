@@ -165,6 +165,8 @@
 (defmulti zero? class)
 (defmethod zero? Long [x]
   (= 0 x))
+(defmethod zero? clojure.lang.Ratio [x]
+  (= 0 (numerator x)))
 (defmethod zero? Double [x]
   (if (> x 0)
     (< x  1e-15)
