@@ -135,9 +135,9 @@
 (defmethod / [:real :complex] [c z]
   (let [x (Re z) y (Im z)
         m (modulus z)
-        m2 (clojure.core/* m m)]
-    (->Complex (clojure.core// (clojure.core/* c x) m2)
-               (clojure.core// (clojure.core/* c y) m2))))
+        m*m (clojure.core/* m m)]
+    (->Complex (clojure.core// (clojure.core/* c x) m*m)
+               (clojure.core// (clojure.core/* c y) m*m))))
 
 (defmethod / [:complex :real] [z c]
   (let [x (Re z) y (Im z)]
@@ -148,16 +148,16 @@
   (let [x (Re z) y (Im z)
         u (Re w) v (Im w)
         m (modulus w)
-        m2 (clojure.core/* m m)]
+        m*m (clojure.core/* m m)]
     (->Complex
       (clojure.core//
         (clojure.core/+ (clojure.core/* x u)
                         (clojure.core/* y v))
-        m2)
+        m*m)
       (clojure.core//
         (clojure.core/- (clojure.core/* y u)
                         (clojure.core/* x v))
-        m2))))
+        m*m))))
 
 (defmethod / :variadic [x y & others]
   (apply - (- x y) others))
@@ -192,15 +192,15 @@
 (defmulti cos classify)
 (defmethod cos :real [x] (Math/cos x))
 (defmethod cos :complex [z]
-  (let [Iz (* I z)]
-    (/ (+ (exp Iz) (exp (- Iz)))
+  (let [I*z (* I z)]
+    (/ (+ (exp I*z) (exp (- I*z)))
        2)))
 
 (defmulti sin classify)
 (defmethod sin :real [x] (Math/sin x))
 (defmethod sin :complex [z]
-  (let [Iz (* I z)]
-    (/ (- (exp Iz) (exp (- Iz)))
+  (let [I*z (* I z)]
+    (/ (- (exp I*z) (exp (- I*z)))
        (* 2 I))))
 
 (defmulti real classify)

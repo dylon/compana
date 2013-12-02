@@ -1,4 +1,5 @@
 (ns compana.main
+  (:refer-clojure :exclude [zero? + - * /])
   (:use compana.complex))
 
 (defn -main
