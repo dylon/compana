@@ -1,34 +1,16 @@
 (ns compana.complex
   (:refer-clojure :exclude [zero? + - * /]))
 
-(declare zero? + - * / ln exp sin cos real imaginary ->Real ->Imaginary)
+(declare
+  zero? + - * /
+  Re Im modulus Arg arg
+  nth-roots principal-nth-root
+  ln exp pow sin cos real imaginary
+  ->Real ->Imaginary complex polar)
 
-(defprotocol IComplex
-  (Re [z]
-    "Real part of this complex number.")
-  (Im [z]
-    "Imaginary part of this complex number.")
-  (modulus [z]
-    "Analogous to the absolute value on the real line, returns the length of z on the complex plane.")
-  (Arg [z]
-    "Argument of complex number, z. This is the angle z forms with the positive, real axis.")
-  (arg [z]
-    "Principal argument of z: Arg z, shifted down by pi to bound it between -pi and +pi"))
+(deftype Complex [real imaginary])
 
-(deftype Complex [real imaginary]
-  IComplex
-  (Re [z] real)
-  (Im [z] imaginary)
-  (modulus [z]
-    (let [x (Re z) y (Im z)]
-      (Math/sqrt (+ (* x x) (* y y)))))
-  (Arg [z]
-    (if (zero? z)
-      (throw (IllegalArgumentException.
-        "The argument is undefined for zero."))
-      (Math/acos (/ (Re z) (modulus z)))))
-  (arg [z]
-    (- (Arg z) Math/PI)))
+(deftype Polar [radius angle])
 
 (defn ->Real [x]
   (->Complex x 0))
@@ -38,10 +20,114 @@
 
 (def ^:const I (->Imaginary 1))
 
+(def ^:const ZERO 1e-15)
+
 (defn classify [x]
-  (if (instance? Complex x)
-    :complex
+  (condp instance? x
+    Complex :complex
+    Polar :polar
     :real))
+
+(defmulti complex classify)
+
+(defmethod complex :complex [^Complex z]
+  z)
+
+(defmethod complex :polar [^Polar e]
+  (->Complex (* (.radius e) (cos (.angle e)))
+             (* (.radius e) (sin (.angle e)))))
+
+(defmethod complex :real [x]
+  (->Complex x 0))
+
+(defmulti polar classify)
+
+(defmethod polar :complex [^Complex z]
+  (->Polar (modulus z) (Arg z)))
+
+(defmethod polar :polar [^Polar e]
+  e)
+
+(defmethod polar :real [x]
+  (->Polar (modulus x) 0))
+
+(defmulti Re
+  "Real part of a complex number."
+  classify)
+
+(defmethod Re :complex [^Complex z]
+  (.real z))
+
+(defmethod Re :real [x]
+  x)
+
+(defmulti Im
+  "Imaginary part of a complex number."
+  classify)
+
+(defmethod Im :complex [^Complex z]
+  (.imaginary z))
+
+(defmethod Im :real [x]
+  0)
+
+(defmulti modulus
+  "Analogous to the absolute value on the real line, returns the length of z on the complex plane."
+  classify)
+
+(defmethod modulus :complex [^Complex z]
+  (let [x (Re z) y (Im z)]
+    (Math/sqrt (+ (* x x) (* y y)))))
+
+; Equivalent to the absolute value for a real number
+(defmethod modulus :real [x]
+  (if (< x 0) (- x) x))
+
+(defmulti Arg
+  "Argument of complex number, z. This is the angle z forms with the positive, real axis."
+  classify)
+
+(defmethod Arg :complex [^Complex z]
+  (if (zero? z)
+    (throw (IllegalArgumentException.
+      "The argument is undefined for zero."))
+    (Math/acos (/ (Re z) (modulus z)))))
+
+(defmethod Arg :real [x]
+  0)
+
+(defmulti arg
+  "Principal argument of z: Arg z, shifted down by pi to bound it between -pi and +pi"
+  classify)
+
+(defmethod arg :complex [^Complex z]
+  (- (Arg z) Math/PI))
+
+(defmethod arg :real [x]
+  0)
+
+(defmulti nth-roots
+  "Finds all n roots of the complex number if it is not zero, or [zero] if it is."
+  (fn [x ^long n] (classify x)))
+
+(defmethod nth-roots :complex [^Complex z ^long n]
+  (map complex (nth-roots (polar z) n)))
+
+(defmethod nth-roots :polar [^Polar e ^long n]
+  (if (zero? e) [0]
+    (let [nth-radius (principal-nth-root (.radius e) n)]
+      (map #(->Polar nth-radius (+ (/ (.angle e) n) (/ (* 2 % Math/PI) n)))
+           (range n)))))
+
+(defmulti principal-nth-root
+  "Returns the positive, nth root of a positive, real number."
+  (fn [x ^long n] {:pre [(>= x 0) (pos? n)]} (classify x)))
+
+(defmethod principal-nth-root :real [x ^long n]
+  (loop [root 1.0]
+    (let [delta (* (/ n x) (- (/ x (Math/pow root (dec n))) root))]
+      (if (< (Math/abs delta) ZERO) root
+        (recur (+ root delta))))))
 
 (defmulti +
   (fn
@@ -51,15 +137,15 @@
 (defmethod + [:real :real] [x y]
   (clojure.core/+ x y))
 
-(defmethod + [:real :complex] [c z]
+(defmethod + [:real :complex] [c ^Complex z]
   (let [x (Re z) y (Im z)]
     (->Complex (clojure.core/+ c x) y)))
 
-(defmethod + [:complex :real] [z c]
+(defmethod + [:complex :real] [^Complex z c]
   (let [x (Re z) y (Im z)]
     (->Complex (clojure.core/+ x c) y)))
 
-(defmethod + [:complex :complex] [z w]
+(defmethod + [:complex :complex] [^Complex z ^Complex w]
   (let [x (Re z) y (Im z)
         u (Re w) v (Im w)]
     (->Complex (clojure.core/+ x u)
@@ -77,15 +163,15 @@
 (defmethod - [:real :real] [x y]
   (clojure.core/- x y))
 
-(defmethod - [:real :complex] [c z]
+(defmethod - [:real :complex] [c ^Complex z]
   (let [x (Re z) y (Im z)]
     (->Complex (clojure.core/- c x) y)))
 
-(defmethod - [:complex :real] [z c]
+(defmethod - [:complex :real] [^Complex z c]
   (let [x (Re z) y (Im z)]
     (->Complex (clojure.core/- x c) y)))
 
-(defmethod - [:complex :complex] [z w]
+(defmethod - [:complex :complex] [^Complex z ^Complex w]
   (let [x (Re z) y (Im z)
         u (Re w) v (Im w)]
     (->Complex (clojure.core/- x u) (clojure.core/- y v))))
@@ -93,7 +179,7 @@
 (defmethod - [:real :negation] [x]
   (clojure.core/- x))
 
-(defmethod - [:complex :negation] [z]
+(defmethod - [:complex :negation] [^Complex z]
   (let [x (Re z) y (Im z)]
     (->Complex (- x) (- y))))
 
@@ -108,21 +194,22 @@
 (defmethod * [:real :real] [x y]
   (clojure.core/* x y))
 
-(defmethod * [:real :complex] [c z]
+(defmethod * [:real :complex] [c ^Complex z]
   (let [x (Re z) y (Im z)]
     (->Complex (clojure.core/* c x) (clojure.core/* c y))))
 
-(defmethod * [:complex :real] [z c]
+(defmethod * [:complex :real] [^Complex z c]
   (let [x (Re z) y (Im z)]
     (->Complex (clojure.core/* x c) (clojure.core/* y c))))
 
-(defmethod * [:complex :complex] [z w]
+(defmethod * [:complex :complex] [^Complex z w]
   (let [x (Re z) y (Im z)
         u (Re w) v (Im w)]
     (->Complex (clojure.core/- (clojure.core/* x u) (clojure.core/* y v))
                (clojure.core/+ (clojure.core/* x v) (clojure.core/* y u)))))
 
-(defmethod * :variadic [x y & others])
+(defmethod * :variadic [x y & others]
+  (apply * (* x y) others))
 
 (defmulti /
   (fn
@@ -132,19 +219,19 @@
 (defmethod / [:real :real] [x y]
   (clojure.core// x y))
 
-(defmethod / [:real :complex] [c z]
+(defmethod / [:real :complex] [c ^Complex z]
   (let [x (Re z) y (Im z)
         m (modulus z)
         m*m (clojure.core/* m m)]
     (->Complex (clojure.core// (clojure.core/* c x) m*m)
                (clojure.core// (clojure.core/* c y) m*m))))
 
-(defmethod / [:complex :real] [z c]
+(defmethod / [:complex :real] [^Complex z c]
   (let [x (Re z) y (Im z)]
     (->Complex (clojure.core// x c)
                (clojure.core// y c))))
 
-(defmethod / [:complex :complex] [z w]
+(defmethod / [:complex :complex] [^Complex z ^Complex w]
   (let [x (Re z) y (Im z)
         u (Re w) v (Im w)
         m (modulus w)
@@ -168,48 +255,62 @@
 (defmethod zero? clojure.lang.Ratio [x]
   (= 0 (numerator x)))
 (defmethod zero? Double [x]
-  (if (> x 0)
-    (< x  1e-15)
-    (> x -1e-15)))
-(defmethod zero? Complex [z]
+  (< (Math/abs x) ZERO))
+(defmethod zero? Complex [^Complex z]
   (let [x (Re z) y (Im z)]
     (and (zero? x) (zero? y))))
+(defmethod zero? Polar [^Polar e]
+  (= 0 (.radius e)))
 
 (defmulti ln classify)
 (defmethod ln :real [x]
   (Math/log x))
-(defmethod ln :complex [z]
+(defmethod ln :complex [^Complex z]
   (->Complex (Math/log (modulus z)) (Arg z)))
 
 (defmulti exp classify)
 (defmethod exp :real [x]
   (Math/exp x))
-(defmethod exp :complex [z]
+(defmethod exp :complex [^Complex z]
   (let [x (Re z) y (Im z)]
     (->Complex (* (Math/exp x) (Math/cos y))
                (* (Math/exp x) (Math/sin y)))))
 
+(defmulti pow
+  (fn
+    ([x y] [(classify x) (classify y)])
+    ([x y & args] :variadic)))
+
+(defmethod pow [:real :real] [x y]
+  (Math/pow x y))
+
+(defmethod pow [:complex :complex] [z w]
+  (exp (* w (ln z))))
+
+(defmethod pow :variadic [x & args]
+  (pow x (apply pow args)))
+
 (defmulti cos classify)
 (defmethod cos :real [x] (Math/cos x))
-(defmethod cos :complex [z]
+(defmethod cos :complex [^Complex z]
   (let [I*z (* I z)]
     (/ (+ (exp I*z) (exp (- I*z)))
        2)))
 
 (defmulti sin classify)
 (defmethod sin :real [x] (Math/sin x))
-(defmethod sin :complex [z]
+(defmethod sin :complex [^Complex z]
   (let [I*z (* I z)]
     (/ (- (exp I*z) (exp (- I*z)))
        (* 2 I))))
 
 (defmulti real classify)
 (defmethod real :real [x] x)
-(defmethod real :complex [z] (Re z))
+(defmethod real :complex [^Complex z] (Re z))
 
 (defmulti imaginary classify)
 (defmethod imaginary :real [x] 0)
-(defmethod imaginary :complex [z] (Im z))
+(defmethod imaginary :complex [^Complex z] (Im z))
 
 (defmethod print-method Complex [^Complex z ^java.io.Writer w]
   (.write w "Complex[")

@@ -34,4 +34,11 @@
        (println "cos(pi/2 + i pi) =" (cos z))
        (println "sin(pi/2 + i pi) =" (sin z))
        (println "|(z/|z|)| =" (modulus (/ z (modulus z))))
-       (println "theta = Arg z =" (Arg z))))))
+       (println "theta = Arg z =" (Arg z))))
+   (doseq [[z n] [[(->Imaginary 4) 2] [(->Imaginary 8) 3] [(->Real 1) 8]]]
+     (printf "(%s + i %s)^(1/%d) = %s%n" (print-str (Re z)) (print-str (Im z)) n
+             (->> (nth-roots z n)
+               (map print-str)
+               (clojure.string/join ", ")
+               (format "[%s]"))))
+   (println "(2 + i 0)^(3 + i 0) =" (pow (->Real 2) (->Real 3)))))
