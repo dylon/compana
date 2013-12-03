@@ -120,7 +120,7 @@
            (range n)))))
 
 (defmulti principal-nth-root
-  "Returns the positive, nth root of a positive, real number."
+  "Returns the nth root of a non-negative, real number."
   (fn [x ^long n] {:pre [(>= x 0) (pos? n)]} (classify x)))
 
 ;; Finds the principal, nth root of the non-negative, real number x via the
