@@ -145,6 +145,7 @@
 ;;           = ((n - 1) * r_k + x / r_k^(n-1) - n * r_k) / n
 ;;           = (((n - 1) - n) * r_k + x / r_k^(n-1)) / n
 ;;           = (x / r_k^(n-1) - r_k) / n
+;;  7. Stop once |delta| < precision, where precision ~ 0.
 (defmethod principal-nth-root :real [x ^long n]
   (loop [root 1.0]
     (let [delta (/ (- (/ x (Math/pow root (dec n))) root) n)]
