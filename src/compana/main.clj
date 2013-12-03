@@ -41,4 +41,10 @@
                (map print-str)
                (clojure.string/join ", ")
                (format "[%s]"))))
+   (println "8th roots of unity to the power 8 = "
+            (->> (nth-roots (->Real 1) 8)
+              (map (fn [nth-root] (pow nth-root (->Real 8))))
+              (map print-str)
+              (clojure.string/join ", ")
+              (format "[%s]")))
    (println "(2 + i 0)^(3 + i 0) =" (pow (->Real 2) (->Real 3)))))

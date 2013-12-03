@@ -137,9 +137,17 @@
 ;;             = r_k - (r_k^n - x) / (n * r_k^(n-1))
 ;;             = r_k - (r_k / n) + (x / (n * x_k^(n-1)))
 ;;             = (1 / n) * ((n - 1) * r_k + x / r_k^(n-1))
+;;             = ((n - 1) * r_k + x / r_k^(n-1)) / n
+;;  6. Let r_(k+1) = r_k + delta. Then, delta = r_(k+1) - r_k
+;;     delta = r_(k+1) - r_k
+;;           = ((n - 1) * r_k + x / r_k^(n-1)) / n - r_k
+;;           = ((n - 1) * r_k + x / r_k^(n-1)) / n - (n * r_k) / n
+;;           = ((n - 1) * r_k + x / r_k^(n-1) - n * r_k) / n
+;;           = (((n - 1) - n) * r_k + x / r_k^(n-1)) / n
+;;           = (x / r_k^(n-1) - r_k) / n
 (defmethod principal-nth-root :real [x ^long n]
   (loop [root 1.0]
-    (let [delta (* (/ n x) (- (/ x (Math/pow root (dec n))) root))]
+    (let [delta (/ (- (/ x (Math/pow root (dec n))) root) n)]
       (if (< (Math/abs delta) ZERO) root
         (recur (+ root delta))))))
 
