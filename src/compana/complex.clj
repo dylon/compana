@@ -270,7 +270,7 @@
         m*m))))
 
 (defmethod / :variadic [x y & others]
-  (apply - (- x y) others))
+  (apply / (/ x y) others))
 
 (defmulti zero? class)
 (defmethod zero? Long [x]
