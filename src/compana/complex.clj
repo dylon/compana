@@ -123,6 +123,20 @@
   "Returns the positive, nth root of a positive, real number."
   (fn [x ^long n] {:pre [(>= x 0) (pos? n)]} (classify x)))
 
+;; Finds the principal, nth root of the non-negative, real number x via the
+;; Newton method:
+;;  1. Make an initial guess r_0
+;;  2. Set r_(k+1) = r_k - f(r_k) / f'(r_k)
+;;  3. Repeat until the desired precision is reached.
+;; Derivation:
+;;  1. r = x^(1/n), where r is the nth root of x
+;;  2. r = x^(1/n) <=> r^n = x <=> r^n - x = 0
+;;  3. Let f(r) = r^n - x = 0
+;;  4. Therefore, f'(r) = n * r^(n-1)
+;;  5. r_(k+1) = r_k - f(r_k) / f'(r_k)
+;;             = r_k - (r_k^n - x) / (n * r_k^(n-1))
+;;             = r_k - (r_k / n) + (x / (n * x_k^(n-1)))
+;;             = (1 / n) * ((n - 1) * r_k + x / r_k^(n-1))
 (defmethod principal-nth-root :real [x ^long n]
   (loop [root 1.0]
     (let [delta (* (/ n x) (- (/ x (Math/pow root (dec n))) root))]
