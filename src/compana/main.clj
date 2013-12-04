@@ -1,6 +1,6 @@
 (ns compana.main
   (:refer-clojure :exclude [zero? + - * /])
-  (:use compana.complex))
+  (:use [compana arithmetic complex]))
 
 (defn -main
   ([& args]
@@ -22,9 +22,11 @@
      (println "e^(ln z) =" (exp (ln z)))
      (let [z (->Complex (/ Math/PI 2) 1)]
        (println "   cos(pi/2 + i)  =" (cos z))
-       (println "Im(cos(pi/2 + i)) = (e^(-1) - e) / 2 =" (/ (- (Math/exp -1) Math/E) 2))
+       (println "Im(cos(pi/2 + i)) = (e^(-1) - e) / 2 ="
+                (/ (- (Math/exp -1) Math/E) 2))
        (println "   sin(pi/2 + i)  =" (sin z))
-       (println "Re(sin(pi/2 + i)) = (e^(-1) + e) / 2 =" (/ (+ (Math/exp -1) Math/E) 2))
+       (println "Re(sin(pi/2 + i)) = (e^(-1) + e) / 2 ="
+                (/ (+ (Math/exp -1) Math/E) 2))
        (println "|cos(pi/2+i) + sin(pi/2+i)| =" (modulus (+ (cos z) (sin z)))))
      (println "Arg -1 =" (Arg (->Real -1)))
      (println "pi =" Math/PI)
@@ -47,4 +49,6 @@
               (map print-str)
               (clojure.string/join ", ")
               (format "[%s]")))
-   (println "(2 + i 0)^(3 + i 0) =" (pow (->Real 2) (->Real 3)))))
+   (println "(2 + i 0)^(3 + i 0) =" (pow (->Real 2) (->Real 3)))
+   (println "2/3/4/5 = ((2/3)/4)/5 =" (/ 2 3 4 5))
+   (println (->Polar 3 Math/PI))))
