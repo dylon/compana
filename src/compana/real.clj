@@ -1,25 +1,11 @@
 (ns compana.real
-  (:refer-clojure :exclude [zero? + - * /])
+  (:refer-clojure :exclude [zero? + - * / < = == > <= >=])
   (:use compana.arithmetic))
 
-(defmethod classify Float [^Float _] :real)
-(defmethod classify Double [^Double _] :real)
-(defmethod classify Long [^Long _] :real)
-(defmethod classify Integer [^Integer _] :real)
-(defmethod classify Short [^Short _] :real)
-(defmethod classify Byte [^Byte _] :real)
-(defmethod classify clojure.lang.Ratio [^clojure.lang.Ratio _] :real)
+(defmethod classify Number [^Number _]
+  :real)
 
-(defmethod zero? Long [^Long x]
-  (= 0 x))
-
-(defmethod zero? Integer [^Integer x]
-  (= 0 x))
-
-(defmethod zero? Short [^Short x]
-  (= 0 x))
-
-(defmethod zero? Byte [^Byte x]
+(defmethod zero? Number [^Number x]
   (= 0 x))
 
 (defmethod zero? clojure.lang.Ratio [^clojure.lang.Ratio x]
@@ -30,6 +16,9 @@
 
 (defmethod zero? Float [^Float x]
   (< (Math/abs x) ZERO))
+
+(defmethod abs :real [^Number x]
+  (if (< x 0) (- x) x))
 
 ;; Finds the principal, nth root of the non-negative, real number x via the
 ;; Newton method:
@@ -60,6 +49,29 @@
       (if (< (Math/abs delta) ZERO) root
         (recur (+ root delta))))))
 
+(defmethod principal-sqrt :real [^Number x]
+  (if (< x 0)
+    (Math/sqrt (abs x))
+    (Math/sqrt x)))
+
+(defmethod < [:real :real] [^Number x, ^Number y]
+  (clojure.core/< x y))
+
+(defmethod <= [:real :real] [^Number x, ^Number y]
+  (clojure.core/<= x y))
+
+(defmethod = [:real :real] [^Number x, ^Number y]
+  (< (abs (- x y)) ZERO))
+
+(defmethod == [:real :real] [^Number x, ^Number y]
+  (< (abs (- x y)) ZERO))
+
+(defmethod > [:real :real] [^Number x, ^Number y]
+  (clojure.core/> x y))
+
+(defmethod >= [:real :real] [^Number x, ^Number y]
+  (clojure.core/>= x y))
+
 (defmethod + [:real :real] [^Number x ^Number y]
   (clojure.core/+ x y))
 
@@ -84,6 +96,29 @@
 (defmethod pow [:real :real] [^Number x ^Number y]
   (Math/pow x y))
 
-(defmethod cos :real [^Number x] (Math/cos x))
+(defmethod cos :real [^Number x]
+  (Math/cos x))
 
-(defmethod sin :real [^Number x] (Math/sin x))
+(defmethod sin :real [^Number x]
+  (Math/sin x))
+
+(defmethod tan :real [^Number x]
+  (/ (sin x) (cos x)))
+
+(defmethod cot :real [^Number x]
+  (/ 1 (tan x)))
+
+(defmethod sec :real [^Number x]
+  (/ 1 (cos x)))
+
+(defmethod csc :real [^Number x]
+  (/ 1 (sin x)))
+
+(defmethod sinh :real [^Number x]
+  (Math/sinh x))
+
+(defmethod cosh :real [^Number x]
+  (Math/cosh x))
+
+(defmethod tanh :real [^Number x]
+  (/ (sinh x) (cosh x)))
