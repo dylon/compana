@@ -5,6 +5,9 @@
 
 (declare Re Im modulus arg Arg complex polar)
 
+;; WARNING: Do not make this a ^:const, because clojure will convert it to the
+;; string representation of its Complex object (e.g. instead of a Complex
+;; object, this will be the string literal, "compana.complex.Complex@34e39e45")
 (def I (Complex. 0 1))
 
 ;; --------------------------------------
